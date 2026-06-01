@@ -51,7 +51,7 @@ export const BOOKING_STATUS = {
 const getApiHost = () => {
   // For a REAL Android device, use your computer's LAN IP.
   // For Android emulator, use 10.0.2.2.
-  if (Platform.OS === 'android') return '10.103.84.77';
+  if (Platform.OS === 'android') return '10.60.175.77';
   if (Platform.OS === 'web' && typeof window !== 'undefined') return window.location.hostname || 'localhost';
   return 'localhost';
 };

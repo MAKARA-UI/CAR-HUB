@@ -44,7 +44,7 @@ const getToken = async () => {
 const request = async (endpoint, options = {}, hasRetried = false) => {
   const token = await getToken();
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), options.timeout || 10000);
+  const timeoutId = setTimeout(() => controller.abort(), options.timeout || 20000);
   const headers = {
     'Content-Type': 'application/json',
     ...options.headers,
