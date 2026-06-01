@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "KS Car Hub",
+    "slug": "ks-car-hub",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/ks-car-hub-logo.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/ks-car-hub-logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0f7f7d"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.kscarhub.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/ks-car-hub-logo.png",
+        "backgroundColor": "#0f7f7d"
+      },
+      "package": "com.kscarhub.app"
+    }
+  }
+}
