@@ -98,70 +98,94 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container} edges={SAFE_AREA_EDGES}>
+
+      {/* ── Teal header with search ── */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Find Your Booking</Text>
-      </View>
+        <View style={styles.headerCircleLarge} />
+        <View style={styles.headerCircleSmall} />
 
-      <View style={styles.searchContainer}>
-        <Icon name="search" size={20} color={COLORS.grayDark} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search cars..."
-          value={searchDraft}
-          onChangeText={setSearchDraft}
-          returnKeyType="search"
-          onSubmitEditing={handleSearch}
-        />
-        {searchDraft.length > 0 && (
-          <TouchableOpacity
-            style={styles.searchIconButton}
-            onPress={() => {
-              setSearchDraft('');
-              setSearchQuery('');
-            }}
-          >
-            <Icon name="close" size={20} color={COLORS.grayDark} />
-          </TouchableOpacity>
-        )}
-        <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-          <Icon name="search" size={20} color={COLORS.white} />
-        </TouchableOpacity>
-      </View>
+        <Text style={styles.headerSub}>Discover available rides</Text>
+        <Text style={styles.headerTitle}>Find your booking</Text>
 
-      <View style={styles.modeSelector}>
-        {SERVICE_MODES.map((mode) => (
-          <TouchableOpacity
-            key={mode.id}
-            style={[styles.modeChip, selectedMode === mode.id && styles.modeChipActive]}
-            onPress={() => setSelectedMode(mode.id)}
-          >
-            <Text style={[styles.modeText, selectedMode === mode.id && styles.modeTextActive]}>{mode.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categories} contentContainerStyle={styles.categoriesContent}>
-        {SERVICE_CATEGORIES.map((category) => (
-          <TouchableOpacity
-            key={category.id}
-            style={[
-              styles.categoryChip,
-              selectedCategory === category.id && styles.categoryChipActive,
-            ]}
-            onPress={() => setSelectedCategory(category.id)}
-          >
-            <Text
-              style={[
-                styles.categoryText,
-                selectedCategory === category.id && styles.categoryTextActive,
-              ]}
+        <View style={styles.searchContainer}>
+          <Icon name="search" size={18} color="#9FE1CB" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search cars..."
+            placeholderTextColor="rgba(255,255,255,0.55)"
+            value={searchDraft}
+            onChangeText={setSearchDraft}
+            returnKeyType="search"
+            onSubmitEditing={handleSearch}
+          />
+          {searchDraft.length > 0 && (
+            <TouchableOpacity
+              style={styles.searchClearBtn}
+              onPress={() => {
+                setSearchDraft('');
+                setSearchQuery('');
+              }}
             >
-              {category.label}
-            </Text>
+              <Icon name="close" size={16} color="rgba(255,255,255,0.75)" />
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+            <Icon name="search" size={18} color="#fff" />
           </TouchableOpacity>
-        ))}
-      </ScrollView>
+        </View>
+      </View>
 
+      {/* ── Body ── */}
+      <View style={styles.body}>
+
+        {/* Trip type toggle */}
+        <Text style={styles.sectionLabel}>Trip type</Text>
+        <View style={styles.modeSelector}>
+          {SERVICE_MODES.map((mode) => (
+            <TouchableOpacity
+              key={mode.id}
+              style={[styles.modeChip, selectedMode === mode.id && styles.modeChipActive]}
+              onPress={() => setSelectedMode(mode.id)}
+            >
+              <Text style={[styles.modeText, selectedMode === mode.id && styles.modeTextActive]}>
+                {mode.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Category chips */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.categories}
+          contentContainerStyle={styles.categoriesContent}
+        >
+          {SERVICE_CATEGORIES.map((category) => (
+            <TouchableOpacity
+              key={category.id}
+              style={[
+                styles.categoryChip,
+                selectedCategory === category.id && styles.categoryChipActive,
+              ]}
+              onPress={() => setSelectedCategory(category.id)}
+            >
+              <Text
+                style={[
+                  styles.categoryText,
+                  selectedCategory === category.id && styles.categoryTextActive,
+                ]}
+              >
+                {category.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        <Text style={styles.sectionLabel}>Available vehicles</Text>
+      </View>
+
+      {/* ── Vehicle list ── */}
       <FlatList
         data={filteredVehicles}
         keyExtractor={(item) => item.id}
@@ -173,8 +197,9 @@ export default function HomeScreen({ navigation }) {
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Icon name="directions-car" size={64} color={COLORS.grayLight} />
-            <Text style={styles.emptyText}>No cars found for this category</Text>
+            <Icon name="directions-car" size={56} color="#D3D1C7" />
+            <Text style={styles.emptyTitle}>No cars found</Text>
+            <Text style={styles.emptyText}>Try adjusting your search or filters.</Text>
           </View>
         }
         showsVerticalScrollIndicator={false}
@@ -197,125 +222,181 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.gray,
+    backgroundColor: '#eef2ef',
   },
+
+  // ── Header ──────────────────────────────────────────────
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 24,
+    overflow: 'hidden',
+  },
+  headerCircleLarge: {
+    position: 'absolute',
+    right: -28,
+    top: -34,
+    width: 122,
+    height: 122,
+    borderRadius: 61,
+    backgroundColor: 'rgba(255, 255, 255, 0.10)',
+  },
+  headerCircleSmall: {
+    position: 'absolute',
+    right: 48,
+    bottom: -44,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  headerSub: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#d7f4ec',
+    marginBottom: 3,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: COLORS.black,
+    fontSize: 22,
+    fontWeight: '800',
+    color: COLORS.white,
+    marginBottom: 16,
   },
+
+  // ── Search (inside header) ───────────────────────────────
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
-    marginHorizontal: 16,
-    marginVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.grayLight,
+    borderColor: 'rgba(255, 255, 255, 0.30)',
+    paddingHorizontal: 12,
+    paddingVertical: 2,
+  },
+  searchIcon: {
+    marginRight: 6,
   },
   searchInput: {
     flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    fontSize: 16,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: COLORS.white,
+    fontWeight: '500',
   },
-  searchIconButton: {
-    width: 32,
-    height: 32,
+  searchClearBtn: {
+    width: 28,
+    height: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },
   searchButton: {
-    width: 38,
-    height: 38,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 8,
-    backgroundColor: COLORS.primary,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.35)',
+    marginLeft: 6,
   },
-  categories: {
-    paddingHorizontal: 16,
+
+  // ── Body labels & filters ────────────────────────────────
+  body: {
+    paddingHorizontal: 15,
+    paddingTop: 14,
+  },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#888780',
+    textTransform: 'uppercase',
+    letterSpacing: 0.7,
     marginBottom: 8,
-    flexGrow: 0,
-    flexShrink: 0,
-    maxHeight: 44,
-  },
-  categoriesContent: {
-    alignItems: 'center',
-    paddingRight: 16,
   },
   modeSelector: {
     flexDirection: 'row',
     gap: 10,
-    paddingHorizontal: 16,
     marginBottom: 12,
   },
   modeChip: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 12,
-    borderRadius: 10,
+    paddingVertical: 10,
+    borderRadius: 12,
     backgroundColor: COLORS.white,
     borderWidth: 1,
-    borderColor: COLORS.grayLight,
+    borderColor: '#e0e0e0',
   },
   modeChipActive: {
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
   },
   modeText: {
-    fontSize: 14,
-    color: COLORS.grayDark,
-    fontWeight: '600',
+    fontSize: 13,
+    color: '#555',
+    fontWeight: '700',
   },
   modeTextActive: {
     color: COLORS.white,
+  },
+  categories: {
+    flexGrow: 0,
+    flexShrink: 0,
+    marginBottom: 14,
+  },
+  categoriesContent: {
+    alignItems: 'center',
+    paddingRight: 4,
   },
   categoryChip: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 7,
     borderRadius: 20,
     backgroundColor: COLORS.white,
     marginRight: 8,
     borderWidth: 1,
-    borderColor: COLORS.grayLight,
+    borderColor: '#e0e0e0',
   },
   categoryChipActive: {
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
   },
   categoryText: {
-    marginLeft: 8,
-    fontSize: 14,
-    color: COLORS.grayDark,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#555',
   },
   categoryTextActive: {
     color: COLORS.white,
   },
+
+  // ── List ─────────────────────────────────────────────────
   listContent: {
+    paddingHorizontal: 15,
     paddingBottom: SAFE_SCROLL_PADDING_BOTTOM,
   },
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 48,
+    paddingHorizontal: 24,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#1a1a1a',
+    marginTop: 12,
+    marginBottom: 6,
   },
   emptyText: {
-    fontSize: 16,
-    color: COLORS.grayDark,
-    marginTop: 16,
+    fontSize: 13,
+    color: '#888780',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });

@@ -46,7 +46,8 @@ export default function RequestsScreen() {
   };
 
   const filteredBookings = driverRequests.filter((b) => b.status === selectedBookingFilter);
-  const selectedFilterLabel = BOOKING_FILTERS.find((filter) => filter.id === selectedBookingFilter)?.label || 'Bookings';
+  const selectedFilterLabel =
+    BOOKING_FILTERS.find((filter) => filter.id === selectedBookingFilter)?.label || 'Bookings';
 
   if (isLoading && !refreshing) {
     return <LoadingSpinner fullScreen />;
@@ -54,9 +55,37 @@ export default function RequestsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={SAFE_AREA_EDGES}>
+      {/* ── Teal header ── */}
       <View style={styles.header}>
+        {/* decorative circles */}
+        <View style={styles.headerCircleLarge} />
+        <View style={styles.headerCircleSmall} />
+
+        <Text style={styles.subtitle}>Manage your trips</Text>
         <Text style={styles.title}>Bookings</Text>
-        <Text style={styles.subtitle}>Approve, reject, and track every customer booking by status.</Text>
+
+        {/* filter tabs live inside the header */}
+        <View style={styles.filterTabs}>
+          {BOOKING_FILTERS.map((filter) => (
+            <TouchableOpacity
+              key={filter.id}
+              style={[
+                styles.filterTab,
+                selectedBookingFilter === filter.id && styles.filterTabActive,
+              ]}
+              onPress={() => setSelectedBookingFilter(filter.id)}
+            >
+              <Text
+                style={[
+                  styles.filterText,
+                  selectedBookingFilter === filter.id && styles.filterTextActive,
+                ]}
+              >
+                {filter.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
 
       <ScrollView
@@ -64,18 +93,6 @@ export default function RequestsScreen() {
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.filterTabs}>
-          {BOOKING_FILTERS.map((filter) => (
-            <TouchableOpacity
-              key={filter.id}
-              style={[styles.filterTab, selectedBookingFilter === filter.id && styles.filterTabActive]}
-              onPress={() => setSelectedBookingFilter(filter.id)}
-            >
-              <Text style={[styles.filterText, selectedBookingFilter === filter.id && styles.filterTextActive]}>{filter.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
         {filteredBookings.length > 0 ? (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{selectedFilterLabel} Bookings</Text>
@@ -91,8 +108,12 @@ export default function RequestsScreen() {
           </View>
         ) : (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyTitle}>No {selectedFilterLabel.toLowerCase()} bookings</Text>
-            <Text style={styles.emptyText}>Bookings with this status will appear here.</Text>
+            <Text style={styles.emptyTitle}>
+              No {selectedFilterLabel.toLowerCase()} bookings
+            </Text>
+            <Text style={styles.emptyText}>
+              Bookings with this status will appear here.
+            </Text>
           </View>
         )}
       </ScrollView>
@@ -103,63 +124,92 @@ export default function RequestsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.gray,
+    backgroundColor: '#eef2ef',
   },
+
+  // ── Header ──────────────────────────────────────────────
   header: {
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 12,
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 24,
+    overflow: 'hidden',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: COLORS.black,
+  headerCircleLarge: {
+    position: 'absolute',
+    right: -28,
+    top: -34,
+    width: 122,
+    height: 122,
+    borderRadius: 61,
+    backgroundColor: 'rgba(255, 255, 255, 0.10)',
+  },
+  headerCircleSmall: {
+    position: 'absolute',
+    right: 48,
+    bottom: -44,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
   subtitle: {
-    fontSize: 14,
-    color: COLORS.grayDark,
-    marginTop: 6,
-    lineHeight: 20,
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#d7f4ec',
+    marginBottom: 3,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: COLORS.white,
+    marginBottom: 14,
+  },
+
+  // ── Filter tabs (inside header) ─────────────────────────
+  filterTabs: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  filterTab: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.32)',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  filterTabActive: {
+    backgroundColor: COLORS.white,
+    borderColor: COLORS.white,
+  },
+  filterText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: 'rgba(255, 255, 255, 0.75)',
+  },
+  filterTextActive: {
+    color: '#085041',
+  },
+
+  // ── Scroll body ─────────────────────────────────────────
+  listContent: {
+    paddingTop: 14,
+    paddingHorizontal: 15,
+    paddingBottom: SAFE_SCROLL_PADDING_BOTTOM,
   },
   section: {
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.black,
-    marginBottom: 12,
-  },
-  listContent: {
-    paddingBottom: SAFE_SCROLL_PADDING_BOTTOM,
-  },
-  filterTabs: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 16,
-    marginBottom: 16,
-  },
-  filterTab: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: COLORS.white,
-    borderWidth: 1,
-    borderColor: COLORS.grayLight,
-  },
-  filterTabActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  filterText: {
     fontSize: 13,
-    color: COLORS.grayDark,
-    fontWeight: '600',
+    fontWeight: '800',
+    color: '#888780',
+    marginBottom: 10,
   },
-  filterTextActive: {
-    color: COLORS.white,
-  },
+
+  // ── Empty state ──────────────────────────────────────────
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',

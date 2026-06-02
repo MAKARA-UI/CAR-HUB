@@ -50,7 +50,7 @@ const request = async (endpoint, options = {}, hasRetried = false) => {
     ...options.headers,
   };
 
-  if (token) headers.Authorization = `Bearer ${token}`;
+  if (token && !headers.Authorization) headers.Authorization = `Bearer ${token}`;
 
   try {
     const response = await fetch(`${API_URL}${endpoint}`, {
@@ -58,7 +58,8 @@ const request = async (endpoint, options = {}, hasRetried = false) => {
       headers,
       signal: options.signal || controller.signal,
     });
-    const data = await response.json();
+    const responseText = await response.text();
+    const data = responseText ? JSON.parse(responseText) : {};
 
     if (!response.ok) {
       const message = data.message || 'Something went wrong';
@@ -74,6 +75,10 @@ const request = async (endpoint, options = {}, hasRetried = false) => {
       throw new Error('Request timed out. Please check your connection.');
     }
 
+    if (error instanceof SyntaxError) {
+      throw new Error('Server returned an invalid response. Please check that the API server is running.');
+    }
+
     logError('API request failed', error, { endpoint, options });
     // If network failed, bubble up the error for callers that might implement fallbacks.
     throw error;
@@ -86,6 +91,7 @@ export const authAPI = {
   register: (userData) => request('/auth/register', { method: 'POST', body: JSON.stringify(userData) }),
   login: (email, password) => request('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
   getMe: () => request('/auth/me'),
+  getMeWithToken: (idToken) => request('/auth/me', { headers: { Authorization: `Bearer ${idToken}` } }),
 };
 
 export const vehicleAPI = {

@@ -28,6 +28,36 @@ const exchangeCustomToken = async (customToken) => {
   };
 };
 
+const signInWithPassword = async (email, password) => {
+  const response = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FIREBASE_API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        password,
+        returnSecureToken: true,
+      }),
+    }
+  );
+  const data = await response.json();
+
+  if (!response.ok) {
+    const message = data.error?.message;
+    if (message === 'INVALID_LOGIN_CREDENTIALS' || message === 'EMAIL_NOT_FOUND' || message === 'INVALID_PASSWORD') {
+      throw new Error('Invalid email or password');
+    }
+    throw new Error(message || 'Login failed');
+  }
+
+  return {
+    idToken: data.idToken,
+    refreshToken: data.refreshToken,
+    expiresIn: Number(data.expiresIn || 3600),
+  };
+};
+
 export const authStore = create((set, get) => ({
 
   user: null,
@@ -80,15 +110,15 @@ export const authStore = create((set, get) => ({
   login: async (email, password) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await authAPI.login(email, password);
-      if (response.success) {
-        const session = await exchangeCustomToken(response.token);
+      const session = await signInWithPassword(email, password);
+      const response = await authAPI.getMeWithToken(session.idToken);
+      if (response.success && response.user) {
         get().setUser(response.user, session.idToken, session.refreshToken, session.expiresIn);
         set({ isLoading: false });
         return { success: true };
       }
       set({ isLoading: false });
-      return { success: false, error: 'Login failed' };
+      return { success: false, error: 'User profile not found' };
     } catch (error) {
       set({ error: error.message, isLoading: false });
       return { success: false, error: error.message };

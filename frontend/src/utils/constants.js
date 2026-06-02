@@ -1,6 +1,5 @@
-import { Platform } from 'react-native';
-
 export const COLORS = {
+
   primary: '#0f7f7d',
   primaryDark: '#0a6f6d',
   primaryLight: '#d8f5ee',
@@ -57,19 +56,9 @@ export const BOOKING_STATUS = {
   CANCELLED: { label: 'Cancelled', color: COLORS.grayDark },
 };
 
-const getApiHost = () => {
-  // For a REAL Android device, use your computer's LAN IP.
-  // For Android emulator, use 10.0.2.2.
-  // For iOS simulator, use localhost.
-  // For a REAL iOS device, use your computer's LAN IP.
-  if (Platform.OS === 'android') return '10.60.175.77';
-  if (Platform.OS === 'ios') return '172.20.10.5';
-  if (Platform.OS === 'web' && typeof window !== 'undefined') return window.location.hostname || 'localhost';
-  return 'localhost';
-};
+import { API_URL, FIREBASE_API_KEY } from '../config/env';
 
-export const API_URL = `http://${getApiHost()}:5001/api`;
-export const FIREBASE_API_KEY = 'AIzaSyBMRqfvCEDXWUFUJj22HVNstLM_rw8TNkE';
+export { API_URL, FIREBASE_API_KEY };
 
 export const STORAGE_KEYS = {
   USER: '@ks_car_hub_user',
