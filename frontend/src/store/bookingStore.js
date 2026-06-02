@@ -65,6 +65,23 @@ export const bookingStore = create((set, get) => ({
     }
   },
 
+  addReview: async (bookingId, rating, comment = '') => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await bookingAPI.addReview(bookingId, rating, comment);
+      if (response.success) {
+        await get().fetchMyBookings();
+        set({ isLoading: false });
+        return { success: true, review: response.review };
+      }
+      set({ isLoading: false });
+      return { success: false, error: 'Review failed' };
+    } catch (error) {
+      set({ error: error.message, isLoading: false });
+      return { success: false, error: error.message };
+    }
+  },
+
   getBookingById: async (bookingId) => {
     set({ isLoading: true, error: null });
     try {

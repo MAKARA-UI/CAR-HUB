@@ -8,7 +8,7 @@ import {
   Image,
   Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import * as ImagePicker from 'expo-image-picker';
 import Input from '../../components/common/Input';
@@ -17,21 +17,25 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { vehicleAPI } from '../../services/api';
 import { CATEGORY_MODE_REQUIRED, COLORS, SERVICE_CATEGORIES, SERVICE_MODES, VEHICLE_TYPES } from '../../utils/constants';
 import { validateVehicle } from '../../utils/validation';
+import { SAFE_AREA_EDGES, SAFE_SCROLL_PADDING_BOTTOM, getSafeActionPaddingBottom } from '../../utils/safeArea';
 
-export default function AddVehicleScreen({ navigation }) {
+export default function AddVehicleScreen({ navigation, route }) {
+  const insets = useSafeAreaInsets();
+  const editingVehicle = route?.params?.mode === 'edit' ? route.params.vehicle : null;
+  const isEditing = Boolean(editingVehicle?.id);
   const [loading, setLoading] = useState(false);
-  const [type, setType] = useState('sedan');
-  const [make, setMake] = useState('');
-  const [model, setModel] = useState('');
-  const [year, setYear] = useState('');
-  const [color, setColor] = useState('');
-  const [licensePlate, setLicensePlate] = useState('');
-  const [capacity, setCapacity] = useState('');
-  const [price, setPrice] = useState('');
-  const [category, setCategory] = useState('local');
-  const [serviceMode, setServiceMode] = useState('');
-  const [departureTime, setDepartureTime] = useState('');
-  const [images, setImages] = useState([]);
+  const [type, setType] = useState(editingVehicle?.type || 'sedan');
+  const [make, setMake] = useState(editingVehicle?.make || '');
+  const [model, setModel] = useState(editingVehicle?.model || '');
+  const [year, setYear] = useState(editingVehicle?.year ? String(editingVehicle.year) : '');
+  const [color, setColor] = useState(editingVehicle?.color || '');
+  const [licensePlate, setLicensePlate] = useState(editingVehicle?.licensePlate || '');
+  const [capacity, setCapacity] = useState(editingVehicle?.capacity ? String(editingVehicle.capacity) : '');
+  const [price, setPrice] = useState(editingVehicle?.price ? String(editingVehicle.price) : '');
+  const [category, setCategory] = useState(editingVehicle?.category || 'local');
+  const [serviceMode, setServiceMode] = useState(editingVehicle?.serviceMode || '');
+  const [departureTime, setDepartureTime] = useState(editingVehicle?.departureTime || '');
+  const [images, setImages] = useState((editingVehicle?.images || []).map((uri) => ({ uri })));
   const [errors, setErrors] = useState({});
   const shouldShowMode = CATEGORY_MODE_REQUIRED.includes(category);
   const shouldShowDepartureTime = category === 'outside_country' && serviceMode === 'trip';
@@ -75,6 +79,8 @@ export default function AddVehicleScreen({ navigation }) {
       if (image.base64) {
         const contentType = image.mimeType || 'image/jpeg';
         imageDataUrls.push(`data:${contentType};base64,${image.base64}`);
+      } else if (image.uri) {
+        imageDataUrls.push(image.uri);
       }
     }
     return imageDataUrls;
@@ -123,9 +129,11 @@ export default function AddVehicleScreen({ navigation }) {
         images: imageUrls,
       };
 
-      const response = await vehicleAPI.create(vehicleData);
+      const response = isEditing
+        ? await vehicleAPI.update(editingVehicle.id, vehicleData)
+        : await vehicleAPI.create(vehicleData);
       if (response.success) {
-        Alert.alert('Success', 'Vehicle added successfully', [
+        Alert.alert('Success', isEditing ? 'Vehicle updated successfully' : 'Vehicle added successfully', [
           { text: 'OK', onPress: () => navigation.goBack() },
         ]);
       }
@@ -137,10 +145,15 @@ export default function AddVehicleScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safeArea} edges={SAFE_AREA_EDGES}>
       <LoadingSpinner visible={loading} fullScreen />
 
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.form}>
           <Text style={styles.label}>Vehicle Type</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.typeContainer}>
@@ -295,8 +308,8 @@ export default function AddVehicleScreen({ navigation }) {
         </View>
       </ScrollView>
 
-      <View style={styles.buttonContainer}>
-        <Button title="Add Vehicle" onPress={handleSubmit} size="large" />
+      <View style={[styles.buttonContainer, { paddingBottom: getSafeActionPaddingBottom(insets.bottom) }]}>
+        <Button title={isEditing ? 'Save Vehicle' : 'Add Vehicle'} onPress={handleSubmit} size="large" />
       </View>
     </SafeAreaView>
   );
@@ -309,6 +322,9 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     backgroundColor: COLORS.gray,
+  },
+  scrollContent: {
+    paddingBottom: SAFE_SCROLL_PADDING_BOTTOM,
   },
   form: {
     padding: 16,

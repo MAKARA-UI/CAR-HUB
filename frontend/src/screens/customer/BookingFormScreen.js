@@ -7,8 +7,9 @@ import {
   Alert,
   Platform,
   TouchableOpacity,
+  KeyboardAvoidingView,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
@@ -17,9 +18,11 @@ import { bookingStore } from '../../store/bookingStore';
 import { COLORS } from '../../utils/constants';
 import { formatCurrency } from '../../utils/helpers';
 import { validateBooking } from '../../utils/validation';
+import { SAFE_AREA_EDGES, SAFE_SCROLL_PADDING_BOTTOM, getSafeActionPaddingBottom } from '../../utils/safeArea';
 
 export default function BookingFormScreen({ route, navigation }) {
   const { vehicle } = route.params;
+  const insets = useSafeAreaInsets();
   const [pickup, setPickup] = useState('');
   const [destination, setDestination] = useState('');
   const [date, setDate] = useState(new Date(Date.now() + 60 * 60 * 1000));
@@ -96,76 +99,79 @@ export default function BookingFormScreen({ route, navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <LoadingSpinner visible={isLoading} fullScreen />
+    <SafeAreaView style={styles.container} edges={SAFE_AREA_EDGES}>
+      <KeyboardAvoidingView style={styles.keyboardView} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <LoadingSpinner visible={isLoading} fullScreen />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        style={styles.scrollView}
-      >
-        <View style={styles.vehicleInfo}>
-          <Text style={styles.vehicleTitle}>
-            {vehicle.make} {vehicle.model}
-          </Text>
-          <Text style={styles.vehiclePrice}>
-            {formatCurrency(vehicle.price ?? vehicle.pricePerKm)}
-          </Text>
-        </View>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + SAFE_SCROLL_PADDING_BOTTOM }]}
+          style={styles.scrollView}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.vehicleInfo}>
+            <Text style={styles.vehicleTitle}>
+              {vehicle.make} {vehicle.model}
+            </Text>
+            <Text style={styles.vehiclePrice}>
+              {formatCurrency(vehicle.price ?? vehicle.pricePerKm)}
+            </Text>
+          </View>
 
-        <View style={styles.form}>
-          <Input
-            label={isOutsideCountryTrip ? 'Current Place' : 'Pickup Location'}
-            value={pickup}
-            onChangeText={setPickup}
-            placeholder={isOutsideCountryTrip ? 'Enter current place' : 'Enter pickup location'}
-            icon="location-on"
-            error={errors.pickup}
-          />
-
-          <Input
-            label="Destination"
-            value={destination}
-            onChangeText={setDestination}
-            placeholder="Enter destination"
-            icon="location-on"
-            error={errors.destination}
-          />
-
-          <Text style={styles.dateLabel}>{isOutsideCountryTrip ? 'Departure Date' : 'Pickup Date & Time'}</Text>
-          <TouchableOpacity style={[styles.dateField, errors.date && styles.dateFieldError]} onPress={() => setDatePickerMode('date')}>
-            <Text style={styles.dateText}>{isOutsideCountryTrip ? date.toLocaleDateString() : date.toLocaleString()}</Text>
-          </TouchableOpacity>
-          {errors.date ? <Text style={styles.errorText}>{errors.date}</Text> : null}
-
-          {datePickerMode && (
-            <DateTimePicker
-              value={date}
-              mode={datePickerMode}
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={handleDateChange}
-              minimumDate={new Date()}
+          <View style={styles.form}>
+            <Input
+              label={isOutsideCountryTrip ? 'Current Place' : 'Pickup Location'}
+              value={pickup}
+              onChangeText={setPickup}
+              placeholder={isOutsideCountryTrip ? 'Enter current place' : 'Enter pickup location'}
+              icon="location-on"
+              error={errors.pickup}
             />
-          )}
 
-          <View style={styles.priceBreakdown}>
-            <Text style={styles.priceTitle}>Booking Summary</Text>
-            <View style={[styles.priceRow, styles.totalRow]}>
-              <Text style={styles.totalLabel}>Total Price</Text>
-              <Text style={styles.totalValue}>{formatCurrency(bookingPrice)}</Text>
+            <Input
+              label="Destination"
+              value={destination}
+              onChangeText={setDestination}
+              placeholder="Enter destination"
+              icon="location-on"
+              error={errors.destination}
+            />
+
+            <Text style={styles.dateLabel}>{isOutsideCountryTrip ? 'Departure Date' : 'Pickup Date & Time'}</Text>
+            <TouchableOpacity style={[styles.dateField, errors.date && styles.dateFieldError]} onPress={() => setDatePickerMode('date')}>
+              <Text style={styles.dateText}>{isOutsideCountryTrip ? date.toLocaleDateString() : date.toLocaleString()}</Text>
+            </TouchableOpacity>
+            {errors.date ? <Text style={styles.errorText}>{errors.date}</Text> : null}
+
+            {datePickerMode && (
+              <DateTimePicker
+                value={date}
+                mode={datePickerMode}
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={handleDateChange}
+                minimumDate={new Date()}
+              />
+            )}
+
+            <View style={styles.priceBreakdown}>
+              <Text style={styles.priceTitle}>Booking Summary</Text>
+              <View style={[styles.priceRow, styles.totalRow]}>
+                <Text style={styles.totalLabel}>Total Price</Text>
+                <Text style={styles.totalValue}>{formatCurrency(bookingPrice)}</Text>
+              </View>
             </View>
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
 
-      <View style={styles.buttonContainer}>
-        <Button
-          title="Confirm Booking"
-          onPress={handleSubmit}
-          size="large"
-          style={styles.bookButton}
-        />
-      </View>
+        <View style={[styles.buttonContainer, { paddingBottom: getSafeActionPaddingBottom(insets.bottom) }]}>
+          <Button
+            title="Confirm Booking"
+            onPress={handleSubmit}
+            size="large"
+            style={styles.bookButton}
+          />
+        </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -177,6 +183,9 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     backgroundColor: COLORS.gray,
+  },
+  keyboardView: {
+    flex: 1,
   },
   vehicleInfo: {
     backgroundColor: COLORS.primary,
@@ -274,7 +283,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.gray,
   },
   scrollContent: {
-    paddingBottom: 24,
+    paddingBottom: SAFE_SCROLL_PADDING_BOTTOM,
   },
   bookButton: {
     borderRadius: 12,

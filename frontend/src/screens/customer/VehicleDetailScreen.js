@@ -7,15 +7,18 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import Button from '../../components/common/Button';
 import BookingFormModal from '../../components/booking/BookingFormModal';
 import { vehicleAPI } from '../../services/api';
 import { COLORS, SERVICE_CATEGORIES, SERVICE_MODES } from '../../utils/constants';
 import { formatCurrency } from '../../utils/helpers';
+import { SAFE_AREA_EDGES, SAFE_SCROLL_PADDING_BOTTOM, getSafeActionPaddingBottom } from '../../utils/safeArea';
 
 export default function VehicleDetailScreen({ route, navigation }) {
   const { vehicle: passedVehicle } = route.params;
+  const insets = useSafeAreaInsets();
   const [vehicle, setVehicle] = useState(passedVehicle);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showBookingForm, setShowBookingForm] = useState(false);
@@ -48,8 +51,8 @@ export default function VehicleDetailScreen({ route, navigation }) {
   const displayPrice = vehicle?.price ?? vehicle?.pricePerKm;
 
   return (
-    <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={styles.container} edges={SAFE_AREA_EDGES}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + SAFE_SCROLL_PADDING_BOTTOM }]}>
         <View style={styles.imageContainer}>
           {images.length > 0 ? (
             <>
@@ -170,7 +173,7 @@ export default function VehicleDetailScreen({ route, navigation }) {
         </View>
       </ScrollView>
 
-      <View style={styles.bookButtonContainer}>
+      <View style={[styles.bookButtonContainer, { paddingBottom: getSafeActionPaddingBottom(insets.bottom) }]}>
         <Button
           title="Book Now"
           onPress={handleBookNow}
@@ -187,7 +190,7 @@ export default function VehicleDetailScreen({ route, navigation }) {
           navigation.navigate('Bookings');
         }}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -230,6 +233,9 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
+  },
+  scrollContent: {
+    paddingBottom: SAFE_SCROLL_PADDING_BOTTOM,
   },
   title: {
     fontSize: 24,

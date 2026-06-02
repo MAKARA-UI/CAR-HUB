@@ -6,6 +6,8 @@ import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import AppNavigator from './navigation/AppNavigator';
+import { navigationRef } from './navigation/navigationService';
+import { addNotificationTapListener, registerForPushNotifications } from './services/notificationService';
 import { authStore } from './store/authStore';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import ErrorBoundary from './components/common/ErrorBoundary';
@@ -23,7 +25,7 @@ const applySystemBars = () => {
 
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
-  const { checkAuthState } = authStore();
+  const { checkAuthState, user } = authStore();
 
   useEffect(() => {
     const initAuth = async () => {
@@ -45,6 +47,19 @@ export default function App() {
     return () => subscription.remove();
   }, []);
 
+  useEffect(() => {
+    const subscription = addNotificationTapListener();
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+
+    registerForPushNotifications().catch((error) => {
+      console.log('Push notification registration error:', error.message);
+    });
+  }, [user?.id]);
+
   if (isLoading) {
     return <LoadingSpinner fullScreen />;
   }
@@ -54,7 +69,7 @@ export default function App() {
       <ErrorBoundary>
         <SafeAreaProvider>
           <ExpoStatusBar style="dark" backgroundColor={COLORS.gray} translucent={false} />
-          <NavigationContainer>
+          <NavigationContainer ref={navigationRef}>
             <AppNavigator />
           </NavigationContainer>
         </SafeAreaProvider>

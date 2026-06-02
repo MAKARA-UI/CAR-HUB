@@ -1,9 +1,11 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Dimensions, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Button from '../../components/common/Button';
 import { COLORS, STORAGE_KEYS } from '../../utils/constants';
+import { SAFE_AREA_EDGES } from '../../utils/safeArea';
 
 const { width } = Dimensions.get('window');
 
@@ -43,14 +45,14 @@ export default function OnboardingScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={SAFE_AREA_EDGES}>
       <FlatList ref={flatListRef} data={onboardingData} renderItem={renderItem} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={(e) => setCurrentIndex(Math.round(e.nativeEvent.contentOffset.x / width))} />
       <View style={styles.pagination}>{onboardingData.map((_, index) => <View key={index} style={[styles.dot, currentIndex === index && styles.activeDot]} />)}</View>
       <View style={styles.buttons}>
         <TouchableOpacity onPress={handleGetStarted} style={styles.skipButton}><Text style={styles.skipText}>Skip</Text></TouchableOpacity>
         <Button title={currentIndex === onboardingData.length - 1 ? 'Get Started' : 'Next'} onPress={handleNext} style={styles.nextButton} />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

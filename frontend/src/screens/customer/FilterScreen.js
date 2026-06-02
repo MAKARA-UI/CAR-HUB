@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import Button from '../../components/common/Button';
 import { COLORS, SERVICE_CATEGORIES, SERVICE_MODES } from '../../utils/constants';
+import { SAFE_AREA_EDGES, getSafeActionPaddingBottom } from '../../utils/safeArea';
 
 export default function FilterScreen({ navigation, route }) {
   const { onApplyFilters } = route.params || {};
+  const insets = useSafeAreaInsets();
   const [selectedMode, setSelectedMode] = useState('individual');
   const [selectedCategory, setSelectedCategory] = useState('local');
 
@@ -21,13 +23,13 @@ export default function FilterScreen({ navigation, route }) {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={SAFE_AREA_EDGES}>
       <View style={styles.header}><TouchableOpacity onPress={() => navigation.goBack()}><Icon name="close" size={24} color={COLORS.black} /></TouchableOpacity><Text style={styles.headerTitle}>Filter Vehicles</Text><TouchableOpacity onPress={handleReset}><Text style={styles.resetText}>Reset</Text></TouchableOpacity></View>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.section}><Text style={styles.sectionTitle}>Booking Type</Text><View style={styles.typeGrid}>{SERVICE_MODES.map((mode) => <TouchableOpacity key={mode.id} style={[styles.typeChip, selectedMode === mode.id && styles.typeChipActive]} onPress={() => setSelectedMode(mode.id)}><Text style={[styles.typeText, selectedMode === mode.id && styles.typeTextActive]}>{mode.label}</Text></TouchableOpacity>)}</View></View>
         <View style={styles.section}><Text style={styles.sectionTitle}>Sub Category</Text><View style={styles.typeGrid}>{SERVICE_CATEGORIES.map((category) => <TouchableOpacity key={category.id} style={[styles.typeChip, selectedCategory === category.id && styles.typeChipActive]} onPress={() => setSelectedCategory(category.id)}><Text style={[styles.typeText, selectedCategory === category.id && styles.typeTextActive]}>{category.label}</Text></TouchableOpacity>)}</View></View>
       </ScrollView>
-      <View style={styles.buttonContainer}><Button title="Apply Filters" onPress={handleApply} size="large" /></View>
+      <View style={[styles.buttonContainer, { paddingBottom: getSafeActionPaddingBottom(insets.bottom) }]}><Button title="Apply Filters" onPress={handleApply} size="large" /></View>
     </SafeAreaView>
   );
 }

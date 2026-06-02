@@ -1,9 +1,38 @@
 const { db } = require('../config/firebase');
+const { sendPushNotification } = require('../services/notificationService');
+
+const sendUserBookingNotification = async (userId, notification) => {
+  const userDoc = await db.collection('users').doc(userId).get();
+  if (!userDoc.exists) return;
+
+  const { pushToken } = userDoc.data();
+  if (!pushToken) return;
+
+  await sendPushNotification({
+    to: pushToken,
+    ...notification,
+  });
+};
+
+const getBookingReview = async (bookingId) => {
+  const reviewSnapshot = await db.collection('reviews')
+    .where('bookingId', '==', bookingId)
+    .limit(1)
+    .get();
+
+  if (reviewSnapshot.empty) return null;
+
+  const reviewDoc = reviewSnapshot.docs[0];
+  return {
+    id: reviewDoc.id,
+    ...reviewDoc.data(),
+  };
+};
 
 // Create new booking
 const createBooking = async (req, res) => {
   try {
-    const { vehicleId, pickupLocation, destination, date, price, category, serviceMode, departureTime, notes } = req.body;
+    const { vehicleId, pickupLocation, destination, date, price, category, serviceMode, departureTime, payment, notes } = req.body;
     
     // Check if vehicle exists
     const vehicleDoc = await db.collection('vehicles').doc(vehicleId).get();
@@ -28,6 +57,14 @@ const createBooking = async (req, res) => {
       category: category || vehicleData.category || 'local',
       serviceMode: serviceMode || vehicleData.serviceMode || 'individual',
       departureTime: departureTime || vehicleData.departureTime || '',
+      payment: payment || {
+        method: 'CASH',
+        methodLabel: 'Cash',
+        status: 'CASH_PENDING',
+        statusLabel: 'Pending Cash Payment',
+        paidAt: '',
+        transactionReference: 'Cash Payment Pending',
+      },
       status: 'PENDING',
       notes: notes || '',
       createdAt: new Date().toISOString(),
@@ -35,6 +72,15 @@ const createBooking = async (req, res) => {
     };
     
     const docRef = await db.collection('bookings').add(bookingData);
+    await sendUserBookingNotification(vehicleData.driverId, {
+      title: 'New booking request received',
+      body: `${req.user.name || 'A customer'} requested ${vehicleData.make} ${vehicleData.model}.`,
+      data: {
+        screen: 'BookingDetails',
+        bookingId: docRef.id,
+        type: 'NEW_BOOKING_REQUEST',
+      },
+    });
     
     res.status(201).json({
       success: true,
@@ -77,6 +123,7 @@ const getMyBookings = async (req, res) => {
     let bookings = [];
     for (const doc of snapshot.docs) {
       const bookingData = doc.data();
+      const review = await getBookingReview(doc.id);
       
       // Get vehicle info
       const vehicleDoc = await db.collection('vehicles').doc(bookingData.vehicleId).get();
@@ -84,6 +131,8 @@ const getMyBookings = async (req, res) => {
       bookings.push({
         id: doc.id,
         ...bookingData,
+        hasReview: Boolean(review),
+        review,
         vehicle: vehicleDoc.exists ? {
           id: vehicleDoc.id,
           model: vehicleDoc.data().model,
@@ -127,6 +176,7 @@ const getDriverRequests = async (req, res) => {
     let bookings = [];
     for (const doc of snapshot.docs) {
       const bookingData = doc.data();
+      const review = await getBookingReview(doc.id);
       
       // Get customer info
       const customerDoc = await db.collection('users').doc(bookingData.customerId).get();
@@ -137,6 +187,8 @@ const getDriverRequests = async (req, res) => {
       bookings.push({
         id: doc.id,
         ...bookingData,
+        hasReview: Boolean(review),
+        review,
         customer: customerDoc.exists ? {
           name: customerDoc.data().name,
           phone: customerDoc.data().phone,
@@ -199,6 +251,7 @@ const updateBookingStatus = async (req, res) => {
     }
     
     const bookingData = bookingDoc.data();
+    const review = await getBookingReview(bookingDoc.id);
     
     // Check authorization
     if (status === 'ACCEPTED' || status === 'REJECTED') {
@@ -220,6 +273,16 @@ const updateBookingStatus = async (req, res) => {
     await db.collection('bookings').doc(id).update({
       status,
       updatedAt: new Date().toISOString(),
+    });
+    await sendUserBookingNotification(bookingData.customerId, {
+      title: 'Booking status updated',
+      body: `Your booking was ${status.toLowerCase()}.`,
+      data: {
+        screen: 'BookingDetails',
+        bookingId: id,
+        status,
+        type: 'BOOKING_STATUS_UPDATE',
+      },
     });
     
     res.json({
@@ -250,6 +313,7 @@ const getBookingById = async (req, res) => {
     }
     
     const bookingData = bookingDoc.data();
+    const review = await getBookingReview(bookingDoc.id);
     
     // Check authorization
     if (bookingData.customerId !== req.user.id && bookingData.driverId !== req.user.id) {
@@ -273,6 +337,8 @@ const getBookingById = async (req, res) => {
       booking: {
         id: bookingDoc.id,
         ...bookingData,
+        hasReview: Boolean(review),
+        review,
         customer: customerDoc.exists ? {
           name: customerDoc.data().name,
           phone: customerDoc.data().phone,
@@ -361,6 +427,13 @@ const addReview = async (req, res) => {
     };
     
     const reviewRef = await db.collection('reviews').add(reviewData);
+    await db.collection('bookings').doc(id).update({
+      hasReview: true,
+      reviewRating: reviewData.rating,
+      reviewComment: reviewData.comment,
+      reviewedAt: reviewData.createdAt,
+      updatedAt: new Date().toISOString(),
+    });
     
     // Update vehicle rating
     const reviewsSnapshot = await db.collection('reviews')

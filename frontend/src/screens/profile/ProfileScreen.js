@@ -15,6 +15,7 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { profileAPI } from '../../services/api';
 import { authStore } from '../../store/authStore';
 import { COLORS } from '../../utils/constants';
+import { SAFE_AREA_EDGES, SAFE_SCROLL_PADDING_BOTTOM } from '../../utils/safeArea';
 
 export default function ProfileScreen({ navigation }) {
   const [profile, setProfile] = useState(null);
@@ -57,13 +58,16 @@ export default function ProfileScreen({ navigation }) {
     navigation.navigate(route);
   };
 
+  const isDriver = profile?.role === 'driver';
   const menuItems = [
     { id: 'editProfile', title: 'Edit Profile', icon: 'person', action: () => navigateTo('Settings', { section: 'profile' }) },
-    { id: 'myVehicles', title: 'My Vehicles', icon: 'directions-car', action: () => navigateTo('Settings', { section: 'myVehicles' }) },
-    { id: 'paymentMethods', title: 'Payment Methods', icon: 'credit-card', action: () => navigateTo('Settings', { section: 'paymentMethods' }) },
-    { id: 'notifications', title: 'Notifications', icon: 'notifications', action: () => navigateTo('Settings', { section: 'notifications' }) },
-    { id: 'privacyPolicy', title: 'Privacy Policy', icon: 'policy', action: () => navigateTo('Settings', { section: 'privacyPolicy' }) },
-    { id: 'aboutUs', title: 'About Us', icon: 'info', action: () => navigateTo('Settings', { section: 'aboutUs' }) },
+    ...(isDriver ? [
+      { id: 'myVehicles', title: 'My Vehicles', icon: 'directions-car', action: () => navigateTo('MyVehicles') },
+      { id: 'paymentMethods', title: 'Payment Methods', icon: 'credit-card', action: () => navigateTo('PaymentMethods') },
+    ] : []),
+    { id: 'notifications', title: 'Notifications', icon: 'notifications', action: () => navigateTo('Notifications') },
+    { id: 'privacyPolicy', title: 'Privacy Policy', icon: 'policy', action: () => navigateTo('PrivacyPolicy') },
+    { id: 'aboutUs', title: 'About Us', icon: 'info', action: () => navigateTo('AboutUs') },
     { id: 'logout', title: 'Logout', icon: 'exit-to-app', action: handleLogout },
   ];
 
@@ -72,12 +76,12 @@ export default function ProfileScreen({ navigation }) {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safeArea} edges={SAFE_AREA_EDGES}>
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View style={styles.avatarWrapper}>
             {profile?.avatar ? (
-              <Image source={{ uri: profile.avatar }} style={styles.avatar} />
+              <Image source={{ uri: profile.avatar }} style={styles.avatar} resizeMode="cover" />
             ) : (
               <View style={styles.avatarPlaceholder}>
                 <Text style={styles.avatarInitial}>
@@ -120,7 +124,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.gray,
   },
   scrollContainer: {
-    paddingBottom: 24,
+    paddingBottom: SAFE_SCROLL_PADDING_BOTTOM,
   },
   header: {
     backgroundColor: COLORS.white,
@@ -132,15 +136,27 @@ const styles = StyleSheet.create({
   },
   avatarWrapper: {
     marginBottom: 16,
+    width: 96,
+    height: 96,
+    maxWidth: 96,
+    maxHeight: 96,
+    borderRadius: 48,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    flexShrink: 0,
+    backgroundColor: COLORS.grayLight,
   },
   avatar: {
-    width: 96,
-    height: 96,
+    width: '100%',
+    height: '100%',
     borderRadius: 48,
+    flexShrink: 0,
   },
   avatarPlaceholder: {
-    width: 96,
-    height: 96,
+    width: '100%',
+    height: '100%',
     borderRadius: 48,
     backgroundColor: COLORS.primary,
     justifyContent: 'center',

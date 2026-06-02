@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Modal, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -8,6 +8,13 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Button from '../../components/common/Button';
 import { bookingStore } from '../../store/bookingStore';
 import { COLORS } from '../../utils/constants';
+import { SAFE_AREA_EDGES, SAFE_SCROLL_PADDING_BOTTOM } from '../../utils/safeArea';
+
+const BOOKING_FILTERS = [
+  { id: 'PENDING', label: 'Pending' },
+  { id: 'ACCEPTED', label: 'Confirmed' },
+  { id: 'REJECTED', label: 'Rejected' },
+];
 
 export default function MyTripsScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
@@ -15,22 +22,35 @@ export default function MyTripsScreen({ navigation }) {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [rating, setRating] = useState(5);
   const [reviewText, setReviewText] = useState('');
-  const { bookings, fetchMyBookings, updateBookingStatus, isLoading } = bookingStore();
+  const [selectedBookingFilter, setSelectedBookingFilter] = useState('PENDING');
+  const { bookings, fetchMyBookings, updateBookingStatus, addReview, isLoading } = bookingStore();
 
   useFocusEffect(useCallback(() => { fetchMyBookings(); }, []));
 
   const onRefresh = async () => { setRefreshing(true); await fetchMyBookings(); setRefreshing(false); };
   const handleCancel = async (bookingId) => { const result = await updateBookingStatus(bookingId, 'CANCELLED'); if (result.success) await fetchMyBookings(); };
   const handleReview = (booking) => { setSelectedBooking(booking); setShowReviewModal(true); };
-  const submitReview = async () => { if (!selectedBooking) return; const result = await updateBookingStatus(selectedBooking.id, 'COMPLETED', { rating, reviewText }); if (result.success) { setShowReviewModal(false); setRating(5); setReviewText(''); await fetchMyBookings(); } };
+  const submitReview = async () => {
+    if (!selectedBooking) return;
+    const result = await addReview(selectedBooking.id, rating, reviewText);
+    if (result.success) {
+      setShowReviewModal(false);
+      setRating(5);
+      setReviewText('');
+      setSelectedBooking(null);
+      await fetchMyBookings();
+      return;
+    }
+    Alert.alert('Review Failed', result.error || 'Please try again.');
+  };
 
-  const active = bookings.filter((b) => ['PENDING', 'ACCEPTED'].includes(b.status));
-  const completed = bookings.filter((b) => ['COMPLETED', 'REJECTED', 'CANCELLED'].includes(b.status));
+  const filteredBookings = bookings.filter((b) => b.status === selectedBookingFilter);
+  const selectedFilterLabel = BOOKING_FILTERS.find((filter) => filter.id === selectedBookingFilter)?.label || 'Bookings';
 
   if (isLoading && !refreshing) return <LoadingSpinner fullScreen />;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={SAFE_AREA_EDGES}>
       <ScrollView
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         contentContainerStyle={styles.scrollContent}
@@ -40,40 +60,36 @@ export default function MyTripsScreen({ navigation }) {
           <Text style={styles.screenSubtitle}>Track each request by pending, confirmed, rejected, cancelled, or completed status.</Text>
         </View>
 
-        {active.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Pending & Confirmed</Text>
-            {active.map((booking) => (
-              <BookingCard
-                key={booking.id}
-                booking={booking}
-                onPress={() => navigation.navigate('BookingDetail', { booking })}
-                onCancel={() => handleCancel(booking.id)}
-              />
-            ))}
-          </View>
-        )}
+        <View style={styles.filterTabs}>
+          {BOOKING_FILTERS.map((filter) => (
+            <TouchableOpacity
+              key={filter.id}
+              style={[styles.filterTab, selectedBookingFilter === filter.id && styles.filterTabActive]}
+              onPress={() => setSelectedBookingFilter(filter.id)}
+            >
+              <Text style={[styles.filterText, selectedBookingFilter === filter.id && styles.filterTextActive]}>{filter.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-        {completed.length > 0 && (
+        {filteredBookings.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Other Statuses</Text>
-            {completed.map((booking) => (
+            <Text style={styles.sectionTitle}>{selectedFilterLabel} Bookings</Text>
+            {filteredBookings.map((booking) => (
               <BookingCard
                 key={booking.id}
                 booking={booking}
                 onPress={() => navigation.navigate('BookingDetail', { booking })}
+                onCancel={booking.status === 'PENDING' ? () => handleCancel(booking.id) : undefined}
                 onReview={() => booking.status === 'COMPLETED' && !booking.hasReview && handleReview(booking)}
               />
             ))}
           </View>
-        )}
-
-        {bookings.length === 0 && (
+        ) : (
           <View style={styles.emptyContainer}>
             <Icon name="history" size={64} color={COLORS.grayLight} />
-            <Text style={styles.emptyTitle}>No Bookings Yet</Text>
-            <Text style={styles.emptyText}>Your booking requests will appear here once you choose a vehicle.</Text>
-            <Button title="Book a Ride" onPress={() => navigation.navigate('Home')} style={styles.emptyButton} />
+            <Text style={styles.emptyTitle}>No {selectedFilterLabel.toLowerCase()} bookings</Text>
+            <Text style={styles.emptyText}>Bookings with this status will appear here.</Text>
           </View>
         )}
       </ScrollView>
@@ -110,10 +126,15 @@ export default function MyTripsScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.gray },
-  scrollContent: { paddingBottom: 32 },
+  scrollContent: { paddingBottom: SAFE_SCROLL_PADDING_BOTTOM },
   header: { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 12 },
   screenTitle: { fontSize: 24, fontWeight: 'bold', color: COLORS.black },
   screenSubtitle: { fontSize: 14, color: COLORS.grayDark, marginTop: 6, lineHeight: 20 },
+  filterTabs: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginBottom: 12 },
+  filterTab: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 10, backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.grayLight },
+  filterTabActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  filterText: { fontSize: 13, color: COLORS.grayDark, fontWeight: '600' },
+  filterTextActive: { color: COLORS.white },
   section: { marginTop: 16 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: COLORS.black, marginBottom: 12, paddingHorizontal: 16 },
   emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 64, paddingHorizontal: 32 },

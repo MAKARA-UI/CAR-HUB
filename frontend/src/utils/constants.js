@@ -40,6 +40,15 @@ export const SERVICE_MODES = [
 
 export const CATEGORY_MODE_REQUIRED = ['long_distance', 'highlands', 'outside_country'];
 
+export const PAYMENT_METHODS = {
+  MPESA: { id: 'MPESA', label: 'M-Pesa' },
+  ECOCASH: { id: 'ECOCASH', label: 'EcoCash' },
+  BANK_TRANSFER: { id: 'BANK_TRANSFER', label: 'Bank Transfer' },
+  CASH: { id: 'CASH', label: 'Cash' },
+};
+
+export const BANK_OPTIONS = ['Standard Bank', 'First National Bank (FNB)'];
+
 export const BOOKING_STATUS = {
   PENDING: { label: 'Pending', color: COLORS.warning },
   ACCEPTED: { label: 'Confirmed', color: COLORS.success },
@@ -51,7 +60,10 @@ export const BOOKING_STATUS = {
 const getApiHost = () => {
   // For a REAL Android device, use your computer's LAN IP.
   // For Android emulator, use 10.0.2.2.
+  // For iOS simulator, use localhost.
+  // For a REAL iOS device, use your computer's LAN IP.
   if (Platform.OS === 'android') return '10.60.175.77';
+  if (Platform.OS === 'ios') return '172.20.10.5';
   if (Platform.OS === 'web' && typeof window !== 'undefined') return window.location.hostname || 'localhost';
   return 'localhost';
 };

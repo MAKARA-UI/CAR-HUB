@@ -119,4 +119,5 @@ export const profileAPI = {
   getProfile: () => request('/profile'),
   updateProfile: (data) => request('/profile', { method: 'PUT', body: JSON.stringify(data) }),
   getMyVehicles: () => request('/profile/vehicles'),
+  updatePushToken: (pushToken) => request('/profile/push-token', { method: 'PUT', body: JSON.stringify({ pushToken }) }),
 };

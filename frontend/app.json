@@ -24,6 +24,9 @@
         "backgroundColor": "#0f7f7d"
       },
       "package": "com.kscarhub.app"
-    }
+    },
+    "plugins": [
+      "expo-notifications"
+    ]
   }
 }

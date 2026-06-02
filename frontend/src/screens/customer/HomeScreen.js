@@ -16,6 +16,7 @@ import BookingFormModal from '../../components/booking/BookingFormModal';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { vehicleAPI } from '../../services/api';
 import { CATEGORY_MODE_REQUIRED, COLORS, SERVICE_CATEGORIES, SERVICE_MODES } from '../../utils/constants';
+import { SAFE_AREA_EDGES, SAFE_SCROLL_PADDING_BOTTOM } from '../../utils/safeArea';
 
 export default function HomeScreen({ navigation }) {
   const [vehicles, setVehicles] = useState([]);
@@ -96,7 +97,7 @@ export default function HomeScreen({ navigation }) {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={SAFE_AREA_EDGES}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Find Your Booking</Text>
       </View>
@@ -139,7 +140,7 @@ export default function HomeScreen({ navigation }) {
         ))}
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categories}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categories} contentContainerStyle={styles.categoriesContent}>
         {SERVICE_CATEGORIES.map((category) => (
           <TouchableOpacity
             key={category.id}
@@ -246,6 +247,13 @@ const styles = StyleSheet.create({
   categories: {
     paddingHorizontal: 16,
     marginBottom: 8,
+    flexGrow: 0,
+    flexShrink: 0,
+    maxHeight: 44,
+  },
+  categoriesContent: {
+    alignItems: 'center',
+    paddingRight: 16,
   },
   modeSelector: {
     flexDirection: 'row',
@@ -298,7 +306,7 @@ const styles = StyleSheet.create({
     color: COLORS.white,
   },
   listContent: {
-    paddingBottom: 20,
+    paddingBottom: SAFE_SCROLL_PADDING_BOTTOM,
   },
   emptyContainer: {
     alignItems: 'center',

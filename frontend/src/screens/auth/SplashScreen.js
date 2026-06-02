@@ -1,7 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, STORAGE_KEYS } from '../../utils/constants';
+import { SAFE_AREA_EDGES } from '../../utils/safeArea';
 
 export default function SplashScreen({ navigation }) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -20,7 +22,7 @@ export default function SplashScreen({ navigation }) {
   }, []);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={SAFE_AREA_EDGES}>
       <Animated.View style={{ opacity: fadeAnim, transform: [{ scale: scaleAnim }], alignItems: 'center' }}>
         <View style={styles.logo}>
           <Image source={require('../../../assets/ks-car-hub-logo.jpg')} style={styles.logoImage} resizeMode="contain" />
@@ -28,7 +30,7 @@ export default function SplashScreen({ navigation }) {
         <Text style={styles.title}>KS Car Hub</Text>
         <Text style={styles.subtitle}>Smart Transport Booking System</Text>
       </Animated.View>
-    </View>
+    </SafeAreaView>
   );
 }
 

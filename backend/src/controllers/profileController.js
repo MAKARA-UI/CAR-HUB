@@ -82,6 +82,37 @@ const updateProfile = async (req, res) => {
   }
 };
 
+// Save Expo push token for real booking notifications
+const updatePushToken = async (req, res) => {
+  try {
+    const { pushToken } = req.body;
+
+    if (!pushToken || typeof pushToken !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Push token is required',
+      });
+    }
+
+    await db.collection('users').doc(req.user.id).update({
+      pushToken,
+      pushTokenUpdatedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    res.json({
+      success: true,
+      message: 'Push token updated successfully',
+    });
+  } catch (error) {
+    console.error('Update push token error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 // Get driver's vehicles
 const getMyVehicles = async (req, res) => {
   try {
@@ -110,4 +141,4 @@ const getMyVehicles = async (req, res) => {
   }
 };
 
-module.exports = { getProfile, updateProfile, getMyVehicles };
+module.exports = { getProfile, updateProfile, updatePushToken, getMyVehicles };

@@ -8,6 +8,7 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { authStore } from '../../store/authStore';
 import { COLORS } from '../../utils/constants';
 import { validateLogin } from '../../utils/validation';
+import { SAFE_AREA_EDGES } from '../../utils/safeArea';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -28,7 +29,7 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={SAFE_AREA_EDGES}>
       <KeyboardAvoidingView style={styles.keyboardView} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <LoadingSpinner visible={isLoading} fullScreen />
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>

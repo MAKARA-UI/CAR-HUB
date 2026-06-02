@@ -4,7 +4,7 @@ import Icon from '@expo/vector-icons/MaterialIcons';
 import { COLORS, SERVICE_CATEGORIES, SERVICE_MODES } from '../../utils/constants';
 import { formatCurrency } from '../../utils/helpers';
 
-export default function VehicleCard({ vehicle, onPress }) {
+export default function VehicleCard({ vehicle, onPress, showBookButton = true }) {
   const { images = [], make, model, year, price, pricePerKm, capacity, type, color, licensePlate, category, serviceMode, departureTime } = vehicle;
   const categoryLabel = SERVICE_CATEGORIES.find((item) => item.id === (category || 'local'))?.label || 'Local';
   const modeLabel = SERVICE_MODES.find((item) => item.id === (serviceMode || 'individual'))?.label || 'Private Hire';
@@ -41,7 +41,7 @@ export default function VehicleCard({ vehicle, onPress }) {
             <Text style={styles.serviceLabel}>Service + Price</Text>
             <Text style={styles.price}>{categoryLabel} - {formatCurrency(displayPrice)}</Text>
           </View>
-          <View style={styles.bookBadge}><Text style={styles.bookText}>Book</Text><Icon name="chevron-right" size={16} color={COLORS.white} /></View>
+          {showBookButton ? <View style={styles.bookBadge}><Text style={styles.bookText}>Book</Text><Icon name="chevron-right" size={16} color={COLORS.white} /></View> : null}
         </View>
       </View>
     </TouchableOpacity>
