@@ -4,7 +4,7 @@ import Icon from '@expo/vector-icons/MaterialIcons';
 import { COLORS, BOOKING_STATUS, SERVICE_CATEGORIES, SERVICE_MODES } from '../../utils/constants';
 import { formatCurrency, formatDate } from '../../utils/helpers';
 
-export default function BookingCard({ booking, showActions = false, onAccept, onReject, onCancel, onReview, onPress, variant = 'default' }) {
+export default function BookingCard({ booking, showActions = false, onAccept, onReject, onCancel, onReview, onPress, variant = 'default', userRole = 'customer' }) {
   const status = BOOKING_STATUS[booking.status] || { label: booking.status, color: COLORS.grayDark };
   const categoryLabel = SERVICE_CATEGORIES.find((item) => item.id === (booking.category || booking.vehicle?.category || 'local'))?.label || 'Local';
   const modeLabel = SERVICE_MODES.find((item) => item.id === (booking.serviceMode || booking.vehicle?.serviceMode || 'individual'))?.label || 'Private Hire';
@@ -12,7 +12,9 @@ export default function BookingCard({ booking, showActions = false, onAccept, on
   const paymentStatus = payment.statusLabel || (payment.status === 'PAID' ? 'Paid' : 'Pending Cash Payment');
   const paymentMethod = payment.methodLabel || (payment.method === 'CASH' ? 'Cash' : 'Not selected');
   const canCancel = booking.status === 'PENDING';
-  const canReview = booking.status === 'COMPLETED' && !booking.hasReview;
+  const isCompleted = booking.status === 'COMPLETED';
+  const canReview = isCompleted && !booking.hasReview && userRole === 'customer';
+  const hasReviewed = isCompleted && booking.hasReview && userRole === 'customer';
   const isDriverDark = variant === 'driverDark';
 
   return (
@@ -39,7 +41,29 @@ export default function BookingCard({ booking, showActions = false, onAccept, on
       </View>
       {showActions && <View style={styles.actions}><TouchableOpacity style={[styles.actionButton, styles.acceptButton]} onPress={onAccept}><Icon name="check" size={18} color={COLORS.white} /><Text style={styles.actionText}>Approve</Text></TouchableOpacity><TouchableOpacity style={[styles.actionButton, styles.rejectButton]} onPress={onReject}><Icon name="close" size={18} color={COLORS.white} /><Text style={styles.actionText}>Reject</Text></TouchableOpacity></View>}
       {canCancel && !showActions && <TouchableOpacity style={styles.cancelButton} onPress={onCancel}><Text style={styles.cancelText}>Cancel Booking</Text></TouchableOpacity>}
-      {canReview && !showActions && <TouchableOpacity style={styles.reviewButton} onPress={onReview}><Icon name="star-border" size={16} color={COLORS.warning} /><Text style={styles.reviewText}>Write a Review</Text></TouchableOpacity>}
+      {(canReview || hasReviewed) && !showActions && booking.driver?.name && (
+        <View style={styles.driverInfoRow}>
+          <View style={styles.driverInfoAvatar}><Text style={styles.driverInfoAvatarText}>{booking.driver.name.charAt(0).toUpperCase()}</Text></View>
+          <Text style={styles.driverInfoName}>{booking.driver.name}</Text>
+          {booking.driver.rating != null && <View style={styles.userRating}><Icon name="star" size={12} color={COLORS.warning} /><Text style={styles.ratingText}>{booking.driver.rating.toFixed(1)}</Text></View>}
+        </View>
+      )}
+      {canReview && !showActions && (
+        <TouchableOpacity style={styles.reviewButton} onPress={onReview}>
+          <Icon name="star-border" size={16} color={COLORS.warning} />
+          <Text style={styles.reviewText}>Write a Review</Text>
+        </TouchableOpacity>
+      )}
+      {hasReviewed && !showActions && (
+        <View style={styles.reviewResult}>
+          <View style={styles.reviewResultStars}>
+            {[1,2,3,4,5].map((s) => (
+              <Icon key={s} name="star" size={14} color={s <= (booking.reviewRating || 0) ? COLORS.warning : COLORS.grayLight} />
+            ))}
+          </View>
+          {booking.reviewComment ? <Text style={styles.reviewResultText}>{booking.reviewComment}</Text> : null}
+        </View>
+      )}
     </TouchableOpacity>
   );
 }
@@ -90,6 +114,13 @@ const styles = StyleSheet.create({
   actionText: { color: COLORS.white, fontWeight: '600', fontSize: 14 },
   cancelButton: { padding: 12, alignItems: 'center', borderTopWidth: 1, borderTopColor: COLORS.grayLight },
   cancelText: { color: COLORS.error, fontSize: 13, fontWeight: '500' },
+  driverInfoRow: { flexDirection: 'row', alignItems: 'center', padding: 12, borderTopWidth: 1, borderTopColor: COLORS.grayLight, gap: 8 },
+  driverInfoAvatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#e6fbf3', alignItems: 'center', justifyContent: 'center' },
+  driverInfoAvatarText: { fontSize: 11, color: COLORS.primary, fontWeight: '800' },
+  driverInfoName: { fontSize: 13, color: COLORS.black, flex: 1, fontWeight: '500' },
   reviewButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 12, borderTopWidth: 1, borderTopColor: COLORS.grayLight, gap: 6 },
   reviewText: { color: COLORS.warning, fontSize: 13, fontWeight: '500' },
+  reviewResult: { padding: 12, borderTopWidth: 1, borderTopColor: COLORS.grayLight, gap: 4 },
+  reviewResultStars: { flexDirection: 'row', gap: 2 },
+  reviewResultText: { fontSize: 12, color: COLORS.grayDark, lineHeight: 17, marginTop: 2 },
 });

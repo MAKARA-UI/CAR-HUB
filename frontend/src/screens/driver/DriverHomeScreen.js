@@ -84,7 +84,7 @@ export default function DriverHomeScreen({ navigation }) {
           <View style={styles.headerCircleLarge} />
           <View style={styles.headerCircleSmall} />
           <View>
-            <Text style={styles.greeting}>Good afternoon,</Text>
+            <Text style={styles.greeting}>Hello,</Text>
             <Text style={styles.driverName}>{firstName}</Text>
             <View style={styles.activeStatus}>
               <View style={styles.onlineDot} />

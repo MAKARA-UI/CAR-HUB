@@ -34,14 +34,10 @@ const createBooking = async (req, res) => {
   try {
     const { vehicleId, pickupLocation, destination, date, price, category, serviceMode, departureTime, payment, notes } = req.body;
     
-    // Check if vehicle exists
     const vehicleDoc = await db.collection('vehicles').doc(vehicleId).get();
     
     if (!vehicleDoc.exists) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Vehicle not found' 
-      });
+      return res.status(404).json({ success: false, message: 'Vehicle not found' });
     }
     
     const vehicleData = vehicleDoc.data();
@@ -106,10 +102,7 @@ const createBooking = async (req, res) => {
     });
   } catch (error) {
     console.error('Create booking error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: error.message 
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -125,14 +118,24 @@ const getMyBookings = async (req, res) => {
       const bookingData = doc.data();
       const review = await getBookingReview(doc.id);
       
-      // Get vehicle info
       const vehicleDoc = await db.collection('vehicles').doc(bookingData.vehicleId).get();
+      const customerDoc = await db.collection('users').doc(bookingData.customerId).get();
+      const driverDoc = await db.collection('users').doc(bookingData.driverId).get();
       
       bookings.push({
         id: doc.id,
         ...bookingData,
         hasReview: Boolean(review),
         review,
+        customer: customerDoc.exists ? {
+          name: customerDoc.data().name,
+          phone: customerDoc.data().phone,
+        } : null,
+        driver: driverDoc.exists ? {
+          name: driverDoc.data().name,
+          phone: driverDoc.data().phone,
+          rating: driverDoc.data().rating,
+        } : null,
         vehicle: vehicleDoc.exists ? {
           id: vehicleDoc.id,
           model: vehicleDoc.data().model,
@@ -153,16 +156,10 @@ const getMyBookings = async (req, res) => {
 
     bookings = bookings.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     
-    res.json({
-      success: true,
-      bookings,
-    });
+    res.json({ success: true, bookings });
   } catch (error) {
     console.error('Get my bookings error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: error.message 
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -178,10 +175,7 @@ const getDriverRequests = async (req, res) => {
       const bookingData = doc.data();
       const review = await getBookingReview(doc.id);
       
-      // Get customer info
       const customerDoc = await db.collection('users').doc(bookingData.customerId).get();
-      
-      // Get vehicle info
       const vehicleDoc = await db.collection('vehicles').doc(bookingData.vehicleId).get();
       
       bookings.push({
@@ -212,61 +206,50 @@ const getDriverRequests = async (req, res) => {
     }
 
     bookings = bookings
-      .filter((booking) => ['PENDING', 'ACCEPTED', 'REJECTED'].includes(booking.status))
+      .filter((booking) => ['PENDING', 'ACCEPTED', 'REJECTED', 'COMPLETED'].includes(booking.status))
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     
-    res.json({
-      success: true,
-      bookings,
-    });
+    res.json({ success: true, bookings });
   } catch (error) {
     console.error('Get driver requests error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: error.message 
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// Update booking status (Accept/Reject)
+// Update booking status (Accept/Reject/Complete/Cancel)
 const updateBookingStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
     
     if (!['ACCEPTED', 'REJECTED', 'COMPLETED', 'CANCELLED'].includes(status)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid status' 
-      });
+      return res.status(400).json({ success: false, message: 'Invalid status' });
     }
     
     const bookingDoc = await db.collection('bookings').doc(id).get();
     
     if (!bookingDoc.exists) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Booking not found' 
-      });
+      return res.status(404).json({ success: false, message: 'Booking not found' });
     }
     
     const bookingData = bookingDoc.data();
-    const review = await getBookingReview(bookingDoc.id);
     
-    // Check authorization
+    // Authorization
     if (status === 'ACCEPTED' || status === 'REJECTED') {
       if (bookingData.driverId !== req.user.id) {
-        return res.status(403).json({ 
-          success: false, 
-          message: 'Only the driver can accept/reject bookings' 
-        });
+        return res.status(403).json({ success: false, message: 'Only the driver can accept/reject bookings' });
+      }
+    } else if (status === 'COMPLETED') {
+      // Only the driver can mark a trip as completed
+      if (bookingData.driverId !== req.user.id) {
+        return res.status(403).json({ success: false, message: 'Only the driver can complete bookings' });
+      }
+      if (bookingData.status !== 'ACCEPTED') {
+        return res.status(400).json({ success: false, message: 'Only accepted bookings can be marked as completed' });
       }
     } else if (status === 'CANCELLED') {
       if (bookingData.customerId !== req.user.id) {
-        return res.status(403).json({ 
-          success: false, 
-          message: 'Only the customer can cancel bookings' 
-        });
+        return res.status(403).json({ success: false, message: 'Only the customer can cancel bookings' });
       }
     }
     
@@ -274,7 +257,10 @@ const updateBookingStatus = async (req, res) => {
       status,
       updatedAt: new Date().toISOString(),
     });
-    await sendUserBookingNotification(bookingData.customerId, {
+
+    // Notify the other party
+    const notifyUserId = status === 'CANCELLED' ? bookingData.driverId : bookingData.customerId;
+    await sendUserBookingNotification(notifyUserId, {
       title: 'Booking status updated',
       body: `Your booking was ${status.toLowerCase()}.`,
       data: {
@@ -291,10 +277,7 @@ const updateBookingStatus = async (req, res) => {
     });
   } catch (error) {
     console.error('Update booking status error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: error.message 
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -306,30 +289,18 @@ const getBookingById = async (req, res) => {
     const bookingDoc = await db.collection('bookings').doc(id).get();
     
     if (!bookingDoc.exists) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Booking not found' 
-      });
+      return res.status(404).json({ success: false, message: 'Booking not found' });
     }
     
     const bookingData = bookingDoc.data();
     const review = await getBookingReview(bookingDoc.id);
     
-    // Check authorization
     if (bookingData.customerId !== req.user.id && bookingData.driverId !== req.user.id) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Access denied' 
-      });
+      return res.status(403).json({ success: false, message: 'Access denied' });
     }
     
-    // Get customer info
     const customerDoc = await db.collection('users').doc(bookingData.customerId).get();
-    
-    // Get driver info
     const driverDoc = await db.collection('users').doc(bookingData.driverId).get();
-    
-    // Get vehicle info
     const vehicleDoc = await db.collection('vehicles').doc(bookingData.vehicleId).get();
     
     res.json({
@@ -346,6 +317,7 @@ const getBookingById = async (req, res) => {
         driver: driverDoc.exists ? {
           name: driverDoc.data().name,
           phone: driverDoc.data().phone,
+          rating: driverDoc.data().rating,
         } : null,
         vehicle: vehicleDoc.exists ? {
           id: vehicleDoc.id,
@@ -366,10 +338,7 @@ const getBookingById = async (req, res) => {
     });
   } catch (error) {
     console.error('Get booking error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: error.message 
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -382,38 +351,25 @@ const addReview = async (req, res) => {
     const bookingDoc = await db.collection('bookings').doc(id).get();
     
     if (!bookingDoc.exists) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Booking not found' 
-      });
+      return res.status(404).json({ success: false, message: 'Booking not found' });
     }
     
     const bookingData = bookingDoc.data();
     
     if (bookingData.customerId !== req.user.id) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Only the customer can review this booking' 
-      });
+      return res.status(403).json({ success: false, message: 'Only the customer can review this booking' });
     }
     
     if (bookingData.status !== 'COMPLETED') {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Can only review completed bookings' 
-      });
+      return res.status(400).json({ success: false, message: 'Can only review completed bookings' });
     }
     
-    // Check if review already exists
     const existingReview = await db.collection('reviews')
       .where('bookingId', '==', id)
       .get();
     
     if (!existingReview.empty) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Review already exists for this booking' 
-      });
+      return res.status(400).json({ success: false, message: 'Review already exists for this booking' });
     }
     
     const reviewData = {
@@ -441,9 +397,7 @@ const addReview = async (req, res) => {
       .get();
     
     let totalRating = 0;
-    reviewsSnapshot.forEach(doc => {
-      totalRating += doc.data().rating;
-    });
+    reviewsSnapshot.forEach(doc => { totalRating += doc.data().rating; });
     const averageRating = totalRating / reviewsSnapshot.size;
     
     await db.collection('vehicles').doc(bookingData.vehicleId).update({
@@ -457,9 +411,7 @@ const addReview = async (req, res) => {
       .get();
     
     let driverTotalRating = 0;
-    driverReviewsSnapshot.forEach(doc => {
-      driverTotalRating += doc.data().rating;
-    });
+    driverReviewsSnapshot.forEach(doc => { driverTotalRating += doc.data().rating; });
     const driverAverageRating = driverTotalRating / driverReviewsSnapshot.size;
     
     await db.collection('users').doc(bookingData.driverId).update({
@@ -468,17 +420,11 @@ const addReview = async (req, res) => {
     
     res.status(201).json({
       success: true,
-      review: {
-        id: reviewRef.id,
-        ...reviewData,
-      },
+      review: { id: reviewRef.id, ...reviewData },
     });
   } catch (error) {
     console.error('Add review error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: error.message 
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -488,5 +434,5 @@ module.exports = {
   getDriverRequests, 
   updateBookingStatus, 
   getBookingById,
-  addReview 
+  addReview,
 };

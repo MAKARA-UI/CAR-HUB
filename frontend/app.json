@@ -26,7 +26,8 @@
       "package": "com.kscarhub.app"
     },
     "plugins": [
-      "expo-notifications"
+      "expo-notifications",
+      "expo-web-browser"
     ]
   }
 }
