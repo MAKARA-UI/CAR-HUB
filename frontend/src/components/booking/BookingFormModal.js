@@ -79,20 +79,21 @@ export default function BookingFormModal({ visible, vehicle, onClose, onBooked }
     if (!selectedDate) return;
 
     const nextDate = new Date(date);
+
     if (datePickerMode === 'date') {
       nextDate.setFullYear(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
       setDate(nextDate);
-      if (isOutsideCountryTrip) {
-        setDatePickerMode(null);
-        return;
-      }
-      setDatePickerMode(Platform.OS === 'android' ? 'time' : null);
+      // ── Do NOT auto-open time — customer taps the time field manually
+      setDatePickerMode(null);
       return;
     }
 
-    nextDate.setHours(selectedDate.getHours(), selectedDate.getMinutes(), 0, 0);
-    setDate(nextDate);
-    setDatePickerMode(null);
+    if (datePickerMode === 'time') {
+      nextDate.setHours(selectedDate.getHours(), selectedDate.getMinutes(), 0, 0);
+      setDate(nextDate);
+      setDatePickerMode(null);
+      return;
+    }
   };
 
   const handleSubmit = async () => {
@@ -236,11 +237,36 @@ export default function BookingFormModal({ visible, vehicle, onClose, onBooked }
             <Input label={isOutsideCountryTrip ? 'Current Place' : 'Pickup Location'} value={pickup} onChangeText={setPickup} placeholder={isOutsideCountryTrip ? 'Enter current place' : 'Enter pickup location'} icon="my-location" error={errors.pickup} />
             <Input label="Destination" value={destination} onChangeText={setDestination} placeholder="Enter destination" icon="location-on" error={errors.destination} />
 
-            <Text style={styles.inputLabel}>{isOutsideCountryTrip ? 'Departure Date' : 'Pickup Date & Time'}</Text>
-            <TouchableOpacity style={[styles.dateField, errors.date && styles.dateFieldError]} onPress={() => setDatePickerMode('date')}>
-              <Icon name="event" size={20} color={COLORS.grayDark} />
-              <Text style={styles.dateText}>{formatDate(date, isOutsideCountryTrip ? 'date' : 'full')}</Text>
+            {/* ── Pickup Date (always shown) ── */}
+            <Text style={styles.inputLabel}>
+              {isOutsideCountryTrip ? 'Departure Date' : 'Pickup Date'}
+            </Text>
+            <TouchableOpacity
+              style={[styles.dateField, errors.date && styles.dateFieldError]}
+              onPress={() => setDatePickerMode('date')}
+            >
+              <Icon name="event" size={20} color={COLORS.white} />
+              <Text style={styles.dateText}>
+                {date.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}
+              </Text>
             </TouchableOpacity>
+
+            {/* ── Pickup Time (manual, only for non-outside-country trips) ── */}
+            {!isOutsideCountryTrip && (
+              <>
+                <Text style={styles.inputLabel}>Pickup Time</Text>
+                <TouchableOpacity
+                  style={[styles.dateField, errors.date && styles.dateFieldError]}
+                  onPress={() => setDatePickerMode('time')}
+                >
+                  <Icon name="access-time" size={20} color={COLORS.white} />
+                  <Text style={styles.dateText}>
+                    {date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
+
             {errors.date ? <Text style={styles.errorText}>{errors.date}</Text> : null}
 
             {datePickerMode && (
@@ -249,7 +275,7 @@ export default function BookingFormModal({ visible, vehicle, onClose, onBooked }
                 mode={datePickerMode}
                 display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                 onChange={handleDateChange}
-                minimumDate={new Date()}
+                minimumDate={datePickerMode === 'date' ? new Date() : undefined}
               />
             )}
 
@@ -351,9 +377,29 @@ const styles = StyleSheet.create({
   metaLabel: { fontSize: 12, color: COLORS.grayDark, marginBottom: 4 },
   metaValue: { fontSize: 15, fontWeight: '700', color: COLORS.primary },
   inputLabel: { fontSize: 14, fontWeight: '500', color: COLORS.black, marginBottom: 8 },
-  dateField: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.grayLight, borderRadius: 8, marginBottom: 4 },
+
+  // ── Green date/time fields ──────────────────────────────
+  dateField: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 14,
+    backgroundColor: COLORS.primary,      // green fill
+    borderWidth: 1,
+    borderColor: COLORS.primaryDark,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
   dateFieldError: { borderColor: COLORS.error },
-  dateText: { flex: 1, fontSize: 15, color: COLORS.black },
+  dateText: {
+    flex: 1,
+    fontSize: 15,
+    color: COLORS.white,                  // white text — clearly readable
+    fontWeight: '600',
+  },
+  // ───────────────────────────────────────────────────────
+
   errorText: { fontSize: 12, color: COLORS.error, marginBottom: 12 },
   summary: { backgroundColor: COLORS.primaryLight, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: COLORS.success, marginTop: 8 },
   summaryTitle: { fontSize: 15, fontWeight: '700', color: COLORS.primaryDark, marginBottom: 10 },
