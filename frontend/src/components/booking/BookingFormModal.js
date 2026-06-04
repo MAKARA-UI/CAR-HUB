@@ -83,7 +83,7 @@ export default function BookingFormModal({ visible, vehicle, onClose, onBooked }
     if (datePickerMode === 'date') {
       nextDate.setFullYear(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
       setDate(nextDate);
-      // ── Do NOT auto-open time — customer taps the time field manually
+  
       setDatePickerMode(null);
       return;
     }
@@ -251,7 +251,7 @@ export default function BookingFormModal({ visible, vehicle, onClose, onBooked }
               </Text>
             </TouchableOpacity>
 
-            {/* ── Pickup Time (manual, only for non-outside-country trips) ── */}
+           
             {!isOutsideCountryTrip && (
               <>
                 <Text style={styles.inputLabel}>Pickup Time</Text>
@@ -395,10 +395,10 @@ const styles = StyleSheet.create({
   dateText: {
     flex: 1,
     fontSize: 15,
-    color: COLORS.white,                  // white text — clearly readable
+    color: COLORS.white,                 
     fontWeight: '600',
   },
-  // ───────────────────────────────────────────────────────
+
 
   errorText: { fontSize: 12, color: COLORS.error, marginBottom: 12 },
   summary: { backgroundColor: COLORS.primaryLight, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: COLORS.success, marginTop: 8 },
