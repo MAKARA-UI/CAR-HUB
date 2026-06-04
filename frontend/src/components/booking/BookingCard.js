@@ -42,9 +42,9 @@ export default function BookingCard({ booking, showActions = false, onAccept, on
       {showActions && <View style={styles.actions}><TouchableOpacity style={[styles.actionButton, styles.acceptButton]} onPress={onAccept}><Icon name="check" size={18} color={COLORS.white} /><Text style={styles.actionText}>Approve</Text></TouchableOpacity><TouchableOpacity style={[styles.actionButton, styles.rejectButton]} onPress={onReject}><Icon name="close" size={18} color={COLORS.white} /><Text style={styles.actionText}>Reject</Text></TouchableOpacity></View>}
       {canCancel && !showActions && <TouchableOpacity style={styles.cancelButton} onPress={onCancel}><Text style={styles.cancelText}>Cancel Booking</Text></TouchableOpacity>}
       {(canReview || hasReviewed) && !showActions && booking.driver?.name && (
-        <View style={styles.driverInfoRow}>
+        <View style={[styles.driverInfoRow, isDriverDark && styles.driverInfoRowDark]}>
           <View style={styles.driverInfoAvatar}><Text style={styles.driverInfoAvatarText}>{booking.driver.name.charAt(0).toUpperCase()}</Text></View>
-          <Text style={styles.driverInfoName}>{booking.driver.name}</Text>
+          <Text style={[styles.driverInfoName, isDriverDark && styles.driverInfoNameDark]}>{booking.driver.name}</Text>
           {booking.driver.rating != null && <View style={styles.userRating}><Icon name="star" size={12} color={COLORS.warning} /><Text style={styles.ratingText}>{booking.driver.rating.toFixed(1)}</Text></View>}
         </View>
       )}
@@ -115,9 +115,11 @@ const styles = StyleSheet.create({
   cancelButton: { padding: 12, alignItems: 'center', borderTopWidth: 1, borderTopColor: COLORS.grayLight },
   cancelText: { color: COLORS.error, fontSize: 13, fontWeight: '500' },
   driverInfoRow: { flexDirection: 'row', alignItems: 'center', padding: 12, borderTopWidth: 1, borderTopColor: COLORS.grayLight, gap: 8 },
+  driverInfoRowDark: { borderTopColor: '#4c4c49' },
   driverInfoAvatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#e6fbf3', alignItems: 'center', justifyContent: 'center' },
   driverInfoAvatarText: { fontSize: 11, color: COLORS.primary, fontWeight: '800' },
   driverInfoName: { fontSize: 13, color: COLORS.black, flex: 1, fontWeight: '500' },
+  driverInfoNameDark: { color: '#d0c8ba', fontWeight: '700' },
   reviewButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 12, borderTopWidth: 1, borderTopColor: COLORS.grayLight, gap: 6 },
   reviewText: { color: COLORS.warning, fontSize: 13, fontWeight: '500' },
   reviewResult: { padding: 12, borderTopWidth: 1, borderTopColor: COLORS.grayLight, gap: 4 },
