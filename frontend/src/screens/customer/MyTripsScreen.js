@@ -305,6 +305,7 @@ export default function MyTripsScreen({ navigation }) {
               <View key={booking.id}>
                 <BookingCard
                   booking={booking}
+                  variant="driverDark"
                   onPress={() => navigation.navigate('BookingDetail', { booking })}
                   onCancel={booking.status === 'PENDING' ? () => handleCancel(booking.id) : undefined}
                   onReview={() => booking.status === 'COMPLETED' && !booking.hasReview && handleReview(booking)}
